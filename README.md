@@ -1,5 +1,6 @@
 # Agentic AI - Examples
 ## Agents vs Agentic AI
+![image info](./comparison_table.png)
 Software constructs are created to perform functions such as Perception, Reasoning and Actions.  These can be categorized as AI Agents.  When these agents are deployed they are connected to tools and models providing artificial capabilities.  Large Language Models (LLMs)  involve LLM applications that can execute complex tasks through the use of an architecture that combines LLMs with key modules like planning and memory.
   
 Agentic AI systems are autonomous AI systems that can perceive their environment, make decisions, plan, and take actions to achieve complex, pre-defined goals with minimal human intervention, moving beyond simple reactive responses to become proactive digital agents that learn, adapt, and orchestrate multi-step workflows using tools and collaboration.
