@@ -73,5 +73,205 @@ def planner_agent(topic: str, model: str = "openai:o4-mini") -> list[str]:
 
     return steps
 
-# Test your code!
-unittests.test_planner_agent(planner_agent)
+def research_agent(task: str, model: str = "openai:gpt-4o", return_messages: bool = False):
+    """
+    Executes a research task using tools via aisuite (no manual loop).
+    Returns either the assistant text, or (text, messages) if return_messages=True.
+    """
+    print("==================================")  
+    print("🔍 Research Agent")                 
+    print("==================================")
+
+    current_time = datetime.now().strftime('%Y-%m-%d')
+    
+    # Create a customizable prompt by defining the role (e.g., "research assistant"),
+    # listing tools (arxiv_tool, tavily_tool, wikipedia_tool) for various searches,
+    # specifying the task with a placeholder, and including a current_time placeholder.
+    prompt = f"""
+    You are a research assistant with access to:
+    - arxiv_tool: academic papers
+    - tavily_tool: general web search (return JSON when asked)
+    - wikipedia_tool: encyclopedic summaries
+    
+    Task:
+    {task}
+
+    Today is {current_time}
+    """
+    
+    # Create the messages dict to pass to the LLM. Remember this is a user prompt!
+    messages = [{"role": "assistant", "content": prompt}]
+
+    # Save all of your available tools in the tools list. These can be found in the research_tools module.
+    # You can identify each tool in your list like this: 
+    # research_tools.<name_of_tool>, where <name_of_tool> is replaced with the function name of the tool.
+    tools = [
+        research_tools.arxiv_search_tool,
+        research_tools.tavily_search_tool,
+        research_tools.wikipedia_search_tool,
+    ]
+    
+    # Call the model with tools enabled
+    response = CLIENT.chat.completions.create(  
+        # Set the model
+        model=model,
+        # Pass in the messages. You already defined this!
+        messages=messages,
+        # Pass in the tools list. You already defined this!
+        tools=tools,
+        # Set the LLM to automatically choose the tools
+        tool_choice="auto",
+        # Set the max turns to 6
+        max_turns=6
+    )  
+    
+    content = response.choices[0].message.content
+    print("✅ Output:\n", content)
+
+    
+    return (content, messages) if return_messages else content  
+
+def writer_agent(task: str, model: str = "openai:gpt-4o") -> str: # @REPLACE def writer_agent(task: str, model: str = None) -> str:
+    """
+    Executes writing tasks, such as drafting, expanding, or summarizing text.
+    """
+    print("==================================")
+    print("✍️ Writer Agent")
+    print("==================================")
+
+    # Create the system prompt.
+    # This should assign the LLM the role of a writing agent specialized in generating well-structured academic or technical content
+    system_prompt = "You are a writer focused on generating academic or technical content."
+
+    # Define the system msg by using the system_prompt and assigning the role of system
+    system_msg = {"role": "system", "content": system_prompt}
+
+    # Define the user msg. In this case the user prompt should be the task passed to the function
+    user_msg = {"role": "user", "content": task}
+
+    # Add both system and user messages to the messages list
+    messages = [system_msg,user_msg]             
+    
+
+
+    response = CLIENT.chat.completions.create(
+        model=model, 
+        messages=messages,
+        temperature=1.0
+    )
+
+    return response.choices[0].message.content
+
+def editor_agent(task: str, model: str = "openai:gpt-4o") -> str:
+    """
+    Executes editorial tasks such as reflection, critique, or revision.
+    """
+    print("==================================")
+    print("🧠 Editor Agent")
+    print("==================================")
+ 
+    # Create the system prompt.
+    # This should assign the LLM the role of an editor agent specialized in reflecting on, critiquing, or improving existing drafts.
+    system_prompt = "You are an editor whose task is to reflect on, critique, or improve drafts "
+    
+    # Define the system msg by using the system_prompt and assigning the role of system
+    system_msg = {"role": "system", "content": system_prompt}
+    
+    # Define the user msg. In this case the user prompt should be the task passed to the function
+    user_msg = {"role": "user", "content": task}
+    
+    # Add both system and user messages to the messages list
+    messages = [system_msg,user_msg] 
+    
+    response = CLIENT.chat.completions.create(
+        model=model, 
+        messages=messages,
+        temperature=0.7 
+    )
+    
+    return response.choices[0].message.content
+
+agent_registry = {
+    "research_agent": research_agent,
+    "editor_agent": editor_agent,
+    "writer_agent": writer_agent,
+}
+
+def clean_json_block(raw: str) -> str:
+    """
+    Clean the contents of a JSON block that may come wrapped with Markdown backticks.
+    """
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw)
+    return raw.strip()
+
+def executor_agent(topic, model: str = "openai:gpt-4o", limit_steps: bool = True):
+
+    plan_steps = planner_agent(topic)
+    max_steps = 4
+
+    if limit_steps:
+        plan_steps = plan_steps[:min(len(plan_steps), max_steps)]
+    
+    history = []
+
+    print("==================================")
+    print("🎯 Editor Agent")
+    print("==================================")
+
+    for i, step in enumerate(plan_steps):
+
+        agent_decision_prompt = f"""
+        You are an execution manager for a multi-agent research team.
+
+        Given the following instruction, identify which agent should perform it and extract the clean task.
+
+        Return only a valid JSON object with two keys:
+        - "agent": one of ["research_agent", "editor_agent", "writer_agent"]
+        - "task": a string with the instruction that the agent should follow
+
+        Only respond with a valid JSON object. Do not include explanations or markdown formatting.
+
+        Instruction: "{step}"
+        """
+        response = CLIENT.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": agent_decision_prompt}],
+            temperature=0,
+        )
+
+        raw_content = response.choices[0].message.content
+        cleaned_json = clean_json_block(raw_content)
+        agent_info = json.loads(cleaned_json)
+
+        agent_name = agent_info["agent"]
+        task = agent_info["task"]
+
+        context = "\n".join([
+            f"Step {j+1} executed by {a}:\n{r}" 
+            for j, (s, a, r) in enumerate(history)
+        ])
+        enriched_task = f"""
+        You are {agent_name}.
+
+        Here is the context of what has been done so far:
+        {context}
+
+        Your next task is:
+        {task}
+        """
+
+        print(f"\n🛠️ Executing with agent: `{agent_name}` on task: {task}")
+
+        if agent_name in agent_registry:
+            output = agent_registry[agent_name](enriched_task)
+            history.append((step, agent_name, output))
+        else:
+            output = f"⚠️ Unknown agent: {agent_name}"
+            history.append((step, agent_name, output))
+
+        print(f"✅ Output:\n{output}")
+
+    return history
