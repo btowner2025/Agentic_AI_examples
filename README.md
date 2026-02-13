@@ -14,16 +14,16 @@ Agentic AI systems are autonomous AI systems that can perceive their environment
 </details>  
 
 ### Decision Making Frameworks
-1. Rule-Based vs. Adaptive
+1. <b>Rule-Based vs. Adaptive</b>
 Traditional AI agents often followed predefined decision rules or policies optimized for a clear objective. In contrast, an agentic AI approaches an adaptive way to make decisions. It can handle cases it wasn’t explicitly programmed for by reasoning through them. If an agentic AI controlling a smart home encounters an unknown situation (say, a new device joins the network), it could infer how to handle it (perhaps by reading the device’s manual via an internet lookup) rather than freezing or ignoring it – an adaptability beyond a fixed rule set.
 
-2. Single-Step Decisions vs. Long-Horizon Planning
+2. <b>Single-Step Decisions vs. Long-Horizon Planning</b>
 AI agents make decisions at each time step often myopically (what’s the best action now given my goal?). Some sophisticated agents plan ahead (like chess agents that simulate many moves ahead). Agentic AI plans for the long term. It keeps the ultimate goal in mind and plans a sequence of actions or conditional steps to get there, revising as needed. This aligns with human-like problem solving, where we break a big problem into smaller ones. <br><p> By embedding planning capability (using search algorithms or prompting an LLM to generate plans), agentic AI can tackle multi-step problems like “Find a good school for my child and help with the application process”, which involves a series of decisions over weeks or months. A classical agent might struggle with such an extended, multifaceted task.
 
-3. Reactivity vs. Proactiveness
+3. <b>Reactivity vs. Proactiveness</b>
 Many basic agents are reactive – they respond to events but do not take action unprovoked. An agentic AI is often proactive. If it notices an opportunity or a looming problem, it might act on its own initiative. For instance, an agentic AI managing your calendar could proactively move a meeting earlier if it sees a scheduling conflict, without you explicitly asking.  <br><p>That proactivity comes from treating certain optimizations or improvements as part of its goal model. Traditional agents, especially in business software, wouldn’t do that unless explicitly coded to. This difference in decision approach means agentic AI can appear more “initiative-taking” and thus useful in open-ended scenarios – but it also raises expectations that it should know when not to act, a balance that is an active area of development.
 
-4. Transparency of Reasoning
+4. <b>Transparency of Reasoning</b>
 With older agents, decision logic was often transparent (either via understandable rules or by tracing an algorithm). Agentic AI systems, especially those driven by deep learning and LLMs, can be more of a black box in their moment-to-moment reasoning.<br><p>Researchers are working on making their decision-making more interpretable. For example, some agentic frameworks have the AI “think out loud” (output its chain-of-thought reasoning) which helps developers follow what the agent is considering at each step. This is both a design and a usability consideration: an agentic AI might justify why it decided to, say, send an email on your behalf, whereas a classic agent might not explain why it flipped a switch because it was just following its programming.
 
 ## Agentic AI Examples
